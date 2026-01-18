@@ -9,6 +9,7 @@ import {
 import * as Commands from "./commands";
 import * as Configuration from "./configuration";
 import { checkAndInstall } from "./installation";
+import { registerFormatter } from "./formatter";
 import * as Logger from "./logger";
 
 let client: LanguageClient | undefined;
@@ -18,6 +19,8 @@ let client: LanguageClient | undefined;
  * @param context Extension Context provided by Visual Studio Code.
  */
 export async function activate(context: ExtensionContext): Promise<LanguageClient | undefined> {
+	context.subscriptions.push(registerFormatter());
+
 	const serverEnabled = Configuration.getServerEnabled();
 
 	if (serverEnabled === false) {
