@@ -88,6 +88,10 @@ export const commands = {
 	registerCommand: () => ({ dispose: () => {} }),
 };
 
+export const languages = {
+	registerDocumentFormattingEditProvider: () => ({ dispose: () => {} }),
+};
+
 // Track update calls for assertions
 export const mockUpdateCalls = { calls: [] };
 
@@ -104,5 +108,7 @@ export const workspace = {
 		};
 		return config;
 	},
-	workspaceFolders: [{ uri: { path: "/test/workspace" } }],
+	workspaceFolders: [
+		{ uri: { path: "/test/workspace", fsPath: "/test/workspace" } },
+	],
 };

@@ -15,7 +15,7 @@ import {
 } from "vscode";
 import * as Logger from "./logger";
 
-function formatDocument(targetText: string, document: TextDocument): Promise<string> {
+export function formatDocument(targetText: string, document: TextDocument): Promise<string> {
 	return new Promise<string>((resolve, reject) => {
 		const workspaceFolders = workspace.workspaceFolders;
 

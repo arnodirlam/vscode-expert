@@ -77,6 +77,11 @@ function configureExtensionSettings(userDataDir: string, expertBinaryPath?: stri
 
 	const settings: Record<string, unknown> = {
 		"expert.trace.server": "verbose",
+		// Avoid "Format Document With..." picker when both our mix-format provider and
+		// the Expert LSP's textDocument/formatting are registered for elixir.
+		"[elixir]": {
+			"editor.defaultFormatter": "expertlsp.expert",
+		},
 	};
 
 	if (expertBinaryPath) {

@@ -8,13 +8,14 @@ export type { LanguageClient };
 
 export enum Fixture {
 	Diagnostics = "diagnostics",
+	Unformatted = "unformatted",
 }
 
 /**
  * Activates the Expert extension and returns the language client.
  */
 export async function activateExtension(): Promise<LanguageClient | undefined> {
-	const ext = vscode.extensions.getExtension("expert-lsp.expert")!;
+	const ext = vscode.extensions.getExtension("expertlsp.expert")!;
 	return (await ext.activate()) as LanguageClient | undefined;
 }
 

@@ -54,4 +54,31 @@ describe("Extension E2E Tests", () => {
 			new vscode.Range(new vscode.Position(2, 4), new vscode.Position(3, 0)),
 		);
 	});
+
+	it("should format Elixir document with mix format", async () => {
+		// Formatter is registered on activation; does not require the language client
+		const fixturePath = getFixturePath(Fixture.Unformatted);
+		const doc = await vscode.workspace.openTextDocument(fixturePath);
+		await vscode.window.showTextDocument(doc);
+
+		const originalText = doc.getText();
+
+		await vscode.commands.executeCommand("editor.action.formatDocument");
+
+		const formattedText = doc.getText();
+		assert.notStrictEqual(
+			formattedText,
+			originalText,
+			"Document should be modified by formatter",
+		);
+		// mix format fixes indentation and spacing
+		assert.ok(
+			formattedText.includes("  def hello do"),
+			"Should have correct indentation for def hello do",
+		);
+		assert.ok(
+			formattedText.includes("def add(a, b)"),
+			"Should add space after comma in def add(a, b)",
+		);
+	});
 });
