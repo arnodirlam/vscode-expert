@@ -23,74 +23,32 @@ export function formatDocument(targetText: string, document: TextDocument): Prom
 			return reject(new Error("No workspace folder is open"));
 		}
 
-		const targetPath = document.fileName;
-		const targetExt = path.extname(targetPath);
-
-		// Create tmp file
-		const tmpDir = path.join(os.tmpdir(), "vscode-elixir-mix-formatter");
-
-		if (!fs.existsSync(tmpDir)) {
-			fs.mkdirSync(tmpDir, { recursive: true });
-		}
-
-		const tmpFileName = path.normalize(
-			`${tmpDir}/expert-${Math.random()
-				.toString(36)
-				.substring(7)
-				.replace(/[^a-z0-9]+/g, "")}${targetExt}`,
-		);
+		const targetExt = path.extname(document.fileName);
+		let tmpDir: string | undefined;
 
 		try {
-			fs.writeFileSync(tmpFileName, targetText);
-		} catch (err) {
-			Logger.error(`Could not create tmp file in "${tmpDir}": ${err}`);
-			return reject(new Error(`Could not create tmp file in "${tmpDir}"`));
-		}
+			tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "expert-format-"));
+			const tmpFile = path.join(tmpDir, `doc${targetExt}`);
 
-		// Run mix formatter script
-		try {
+			fs.writeFileSync(tmpFile, targetText);
+
 			const cwd = workspaceFolders[0].uri.fsPath;
-			cp.execSync(`mix format ${tmpFileName}`, { cwd });
+			cp.execSync(`mix format ${tmpFile}`, { cwd });
+
+			const formatted = fs.readFileSync(tmpFile, "utf-8");
+
+			if (formatted.length > 0) {
+				resolve(formatted);
+			} else {
+				reject(new Error("Formatter returned empty result"));
+			}
 		} catch (err) {
 			Logger.error(`Failed to format document: ${err}`);
-
-			try {
-				fs.unlinkSync(tmpFileName);
-			} catch {
-				// Ignore cleanup errors
+			reject(new Error("Failed to format the document"));
+		} finally {
+			if (tmpDir) {
+				fs.rmSync(tmpDir, { recursive: true, force: true });
 			}
-
-			return reject(new Error("Failed to format the document"));
-		}
-
-		// Get formatted text
-		let formatted: string;
-		try {
-			formatted = fs.readFileSync(tmpFileName, "utf-8");
-		} catch (err) {
-			Logger.error(`Could not read formatted file: ${err}`);
-
-			try {
-				fs.unlinkSync(tmpFileName);
-			} catch {
-				// Ignore cleanup errors
-			}
-
-			return reject(new Error("Failed to read formatted document"));
-		}
-
-		// Remove tmp file
-		try {
-			fs.unlinkSync(tmpFileName);
-		} catch {
-			// Ignore cleanup errors
-		}
-
-		// Return new document text
-		if (formatted.length > 0) {
-			resolve(formatted);
-		} else {
-			reject(new Error("Formatter returned empty result"));
 		}
 	});
 }
