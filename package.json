@@ -18,7 +18,8 @@
     "mix"
   ],
   "activationEvents": [
-    "workspaceContains:mix.exs"
+    "workspaceContains:mix.exs",
+    "onLanguage:phoenix-heex"
   ],
   "main": "./out/main.js",
   "contributes": {
@@ -58,8 +59,7 @@
           "html-eex"
         ],
         "extensions": [
-          ".html.eex",
-          ".heex"
+          ".html.eex"
         ],
         "configuration": "./eex-language-configuration.json"
       }
