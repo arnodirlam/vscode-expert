@@ -19,7 +19,11 @@ function getExtensionForLanguage(languageId: string): string {
 	switch (languageId) {
 		case "elixir":
 			return ".ex";
+		case "eex":
+			return ".eex";
 		case "html-eex":
+			return ".html.eex";
+		case "phoenix-heex":
 			return ".heex";
 		default:
 			return ".ex";
@@ -78,8 +82,12 @@ export function registerFormatter(): Disposable {
 		[
 			{ language: "elixir", scheme: "file" },
 			{ language: "elixir", scheme: "untitled" },
+			{ language: "eex", scheme: "file" },
+			{ language: "eex", scheme: "untitled" },
 			{ language: "html-eex", scheme: "file" },
 			{ language: "html-eex", scheme: "untitled" },
+			{ language: "phoenix-heex", scheme: "file" },
+			{ language: "phoenix-heex", scheme: "untitled" },
 		],
 		{
 			provideDocumentFormattingEdits: (document: TextDocument) => {

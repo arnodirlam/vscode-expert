@@ -165,7 +165,7 @@ describe("formatDocument", () => {
 			assert.strictEqual(result, formattedOutput);
 		});
 
-		it("uses .heex extension for untitled html-eex files", async () => {
+		it("uses .html.eex extension for untitled html-eex files", async () => {
 			const formattedOutput = "<div>\n  <p>Hello</p>\n</div>\n";
 			let capturedFilePath: string | undefined;
 			execSyncImpl = (cmd: string) => {
@@ -179,7 +179,43 @@ describe("formatDocument", () => {
 				createUntitledDocument("html-eex"),
 			);
 
+			assert.ok(capturedFilePath?.endsWith(".html.eex"));
+			assert.strictEqual(result, formattedOutput);
+		});
+
+		it("uses .heex extension for untitled phoenix-heex files", async () => {
+			const formattedOutput = "<div>\n  <p>Hello</p>\n</div>\n";
+			let capturedFilePath: string | undefined;
+			execSyncImpl = (cmd: string) => {
+				const filePath = cmd.replace(/^mix format\s+/, "").trim();
+				capturedFilePath = filePath;
+				fs.writeFileSync(filePath, formattedOutput);
+			};
+
+			const result = await formatDocument(
+				"<div><p>Hello</p></div>",
+				createUntitledDocument("phoenix-heex"),
+			);
+
 			assert.ok(capturedFilePath?.endsWith(".heex"));
+			assert.strictEqual(result, formattedOutput);
+		});
+
+		it("uses .eex extension for untitled eex files", async () => {
+			const formattedOutput = "<%= if @user do %>\n  <p>Hello</p>\n<% end %>\n";
+			let capturedFilePath: string | undefined;
+			execSyncImpl = (cmd: string) => {
+				const filePath = cmd.replace(/^mix format\s+/, "").trim();
+				capturedFilePath = filePath;
+				fs.writeFileSync(filePath, formattedOutput);
+			};
+
+			const result = await formatDocument(
+				"<%= if @user do %><p>Hello</p><% end %>",
+				createUntitledDocument("eex"),
+			);
+
+			assert.ok(capturedFilePath?.endsWith(".eex"));
 			assert.strictEqual(result, formattedOutput);
 		});
 
