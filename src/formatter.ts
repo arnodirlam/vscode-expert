@@ -15,6 +15,17 @@ import {
 } from "vscode";
 import * as Logger from "./logger";
 
+function getExtensionForLanguage(languageId: string): string {
+	switch (languageId) {
+		case "elixir":
+			return ".ex";
+		case "html-eex":
+			return ".heex";
+		default:
+			return ".ex";
+	}
+}
+
 export function formatDocument(targetText: string, document: TextDocument): Promise<string> {
 	return new Promise<string>((resolve, reject) => {
 		const folder = workspace.getWorkspaceFolder(document.uri);
@@ -26,7 +37,10 @@ export function formatDocument(targetText: string, document: TextDocument): Prom
 
 		Logger.info(`Formatting with workspace: ${cwd}`);
 
-		const targetExt = path.extname(document.fileName);
+		const targetExt =
+			document.uri.scheme === "untitled"
+				? getExtensionForLanguage(document.languageId)
+				: path.extname(document.fileName);
 		let tmpDir: string | undefined;
 
 		try {
@@ -63,7 +77,9 @@ export function registerFormatter(): Disposable {
 	return languages.registerDocumentFormattingEditProvider(
 		[
 			{ language: "elixir", scheme: "file" },
+			{ language: "elixir", scheme: "untitled" },
 			{ language: "html-eex", scheme: "file" },
+			{ language: "html-eex", scheme: "untitled" },
 		],
 		{
 			provideDocumentFormattingEdits: (document: TextDocument) => {

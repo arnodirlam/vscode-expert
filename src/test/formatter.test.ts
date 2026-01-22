@@ -11,18 +11,26 @@ let execSyncImpl: ((cmd: string, _opts?: unknown) => void) | null = null;
 // Set by tests that need to control getWorkspaceFolder; default returns first workspace
 let getWorkspaceFolderImpl: ((uri: any) => any) | null = null;
 
-function createDocument(fileName: string): {
+type MockDocument = {
 	fileName: string;
-	uri: { fsPath: string };
-} {
+	uri: { scheme?: string; fsPath: string };
+	languageId?: string;
+};
+
+function createDocument(fileName: string): MockDocument {
 	return { fileName, uri: { fsPath: fileName } };
 }
 
+function createUntitledDocument(languageId: string): MockDocument {
+	return {
+		fileName: "Untitled-1",
+		uri: { scheme: "untitled", fsPath: "" },
+		languageId,
+	};
+}
+
 describe("formatDocument", () => {
-	let formatDocument: (
-		text: string,
-		doc: { fileName: string; uri: { fsPath: string } },
-	) => Promise<string>;
+	let formatDocument: (text: string, doc: MockDocument) => Promise<string>;
 
 	before(async () => {
 		mock.module("child_process", {
@@ -44,7 +52,10 @@ describe("formatDocument", () => {
 		});
 
 		const formatter = await import("../formatter");
-		formatDocument = formatter.formatDocument;
+		formatDocument = formatter.formatDocument as (
+			text: string,
+			doc: MockDocument,
+		) => Promise<string>;
 	});
 
 	afterEach(() => {
@@ -133,5 +144,74 @@ describe("formatDocument", () => {
 		await formatDocument("code", createDocument("/outside/workspace/file.ex"));
 
 		assert.strictEqual(capturedCwd, "/first/workspace");
+	});
+
+	describe("untitled documents", () => {
+		it("uses .ex extension for untitled elixir files", async () => {
+			const formattedOutput = "defmodule Test do\n  def ok, do: :ok\nend\n";
+			let capturedFilePath: string | undefined;
+			execSyncImpl = (cmd: string) => {
+				const filePath = cmd.replace(/^mix format\s+/, "").trim();
+				capturedFilePath = filePath;
+				fs.writeFileSync(filePath, formattedOutput);
+			};
+
+			const result = await formatDocument(
+				"defmodule Test do def ok, do: :ok end",
+				createUntitledDocument("elixir"),
+			);
+
+			assert.ok(capturedFilePath?.endsWith(".ex"));
+			assert.strictEqual(result, formattedOutput);
+		});
+
+		it("uses .heex extension for untitled html-eex files", async () => {
+			const formattedOutput = "<div>\n  <p>Hello</p>\n</div>\n";
+			let capturedFilePath: string | undefined;
+			execSyncImpl = (cmd: string) => {
+				const filePath = cmd.replace(/^mix format\s+/, "").trim();
+				capturedFilePath = filePath;
+				fs.writeFileSync(filePath, formattedOutput);
+			};
+
+			const result = await formatDocument(
+				"<div><p>Hello</p></div>",
+				createUntitledDocument("html-eex"),
+			);
+
+			assert.ok(capturedFilePath?.endsWith(".heex"));
+			assert.strictEqual(result, formattedOutput);
+		});
+
+		it("uses first workspace folder for untitled files", async () => {
+			workspace.workspaceFolders = [
+				{ uri: { fsPath: "/first/workspace" } },
+				{ uri: { fsPath: "/second/workspace" } },
+			] as any;
+
+			getWorkspaceFolderImpl = () => undefined;
+
+			let capturedCwd: string | undefined;
+			execSyncImpl = (cmd: string, opts?: any) => {
+				capturedCwd = opts?.cwd;
+				const filePath = cmd.replace(/^mix format\s+/, "").trim();
+				fs.writeFileSync(filePath, "formatted\n");
+			};
+
+			await formatDocument("code", createUntitledDocument("elixir"));
+
+			assert.strictEqual(capturedCwd, "/first/workspace");
+		});
+
+		it("rejects untitled files when no workspace is open", async () => {
+			workspace.workspaceFolders = [] as any;
+
+			await assert.rejects(
+				formatDocument("def a do 1 end", createUntitledDocument("elixir")),
+				{
+					message: "No workspace folder is open",
+				},
+			);
+		});
 	});
 });
