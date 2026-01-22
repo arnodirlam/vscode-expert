@@ -108,6 +108,7 @@ export const workspace = {
 		};
 		return config;
 	},
+	getWorkspaceFolder: (_uri) => workspace.workspaceFolders?.[0],
 	workspaceFolders: [
 		{ uri: { path: "/test/workspace", fsPath: "/test/workspace" } },
 	],

@@ -17,11 +17,14 @@ import * as Logger from "./logger";
 
 export function formatDocument(targetText: string, document: TextDocument): Promise<string> {
 	return new Promise<string>((resolve, reject) => {
-		const workspaceFolders = workspace.workspaceFolders;
+		const folder = workspace.getWorkspaceFolder(document.uri);
+		const cwd = folder?.uri.fsPath ?? workspace.workspaceFolders?.[0]?.uri.fsPath;
 
-		if (!workspaceFolders || workspaceFolders.length === 0) {
+		if (!cwd) {
 			return reject(new Error("No workspace folder is open"));
 		}
+
+		Logger.info(`Formatting with workspace: ${cwd}`);
 
 		const targetExt = path.extname(document.fileName);
 		let tmpDir: string | undefined;
@@ -32,7 +35,6 @@ export function formatDocument(targetText: string, document: TextDocument): Prom
 
 			fs.writeFileSync(tmpFile, targetText);
 
-			const cwd = workspaceFolders[0].uri.fsPath;
 			cp.execSync(`mix format ${tmpFile}`, { cwd });
 
 			const formatted = fs.readFileSync(tmpFile, "utf-8");
